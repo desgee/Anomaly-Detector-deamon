@@ -1,17 +1,3 @@
-"""
-monitor.py — Log Monitor
-========================
-Reads the Nginx JSON access log line by line, forever.
-Think of this as the "eyes" of the detector — it sees every
-HTTP request the moment Nginx records it.
-
-It handles:
-  - Waiting for the log file to appear (in case Nginx hasn't started yet)
-  - Log rotation (when the file gets replaced/renamed, we reopen it)
-  - Parsing each JSON line into a clean Python object
-  - Putting parsed entries onto an asyncio queue for the detector to consume
-"""
-
 import asyncio
 import json
 import logging

@@ -1,5 +1,3 @@
-
-
 import asyncio
 import logging
 import math
@@ -28,13 +26,7 @@ class BaselineSnapshot:
 # ── Pure statistics helpers ───────────────────────────────────────────────────
 
 def _mean_stddev(values: List[float]) -> Tuple[float, float]:
-    """
-    Compute mean and population standard deviation from a list of floats.
-    Returns (0.0, 0.0) for empty lists.
-
-    We use population stddev (divide by N, not N-1) because we have the
-    full population of recent traffic, not a sample from a larger set.
-    """
+    
     n = len(values)
     if n == 0:
         return 0.0, 0.0
@@ -46,15 +38,7 @@ def _mean_stddev(values: List[float]) -> Tuple[float, float]:
 # ── Per-hour accumulator ──────────────────────────────────────────────────────
 
 class HourSlot:
-    """
-    Stores per-second counts for one calendar hour (e.g., hour 14 = 2pm).
-
-    Why per-hour?
-    Traffic at 2am looks very different from traffic at 2pm. If we only
-    used the global 30-minute window, a legitimate daytime traffic surge
-    might look like an anomaly. By keeping hourly buckets, we can compare
-    current daytime traffic against recent daytime traffic.
-    """
+    
 
     def __init__(self):
         # Each entry: (request_count, error_count) for one second
@@ -80,22 +64,7 @@ class HourSlot:
 # ── The baseline engine ───────────────────────────────────────────────────────
 
 class BaselineEngine:
-    """
-    Tracks traffic over time and computes the rolling baseline.
-
-    Internal data structures:
-      _rolling: deque of (timestamp, req_count, err_count) — one entry per second
-                Old entries (> 30 minutes) are evicted from the left.
-
-      _hourly:  dict of hour_key → HourSlot
-                hour_key = int(unix_timestamp // 3600)
-                We keep up to 25 hours of these.
-
-      _current_second: the second we're currently accumulating into
-      _current_req:    count of requests seen in _current_second
-      _current_err:    count of errors seen in _current_second
-    """
-
+    
     def __init__(self, cfg: dict):
         bc = cfg.get("baseline", {})
         self.rolling_window_secs = bc.get("rolling_window_minutes", 30) * 60

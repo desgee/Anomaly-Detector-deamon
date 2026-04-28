@@ -322,3 +322,111 @@ Two endpoints:
   GET /          → The HTML dashboard page
   GET /api/metrics → JSON blob with all current metrics
 """
+
+"""
+main.py — Orchestrator
+========================
+This is the entry point. It wires together all the other modules:
+
+  LogMonitor  →  queue  →  AnomalyDetector
+                               │
+                    ┌──────────┴───────────┐
+                    ▼                      ▼
+               Blocker              BaselineEngine
+                    │
+                    ├── AuditLogger
+                    ├── SlackNotifier
+                    └── Unbanner (auto-release)
+
+  Dashboard reads from the shared DetectorState.
+
+How to run:
+  python main.py --config config.yaml
+
+The program runs forever until you press Ctrl+C.
+"""
+
+
+"""
+monitor.py — Log Monitor
+========================
+Reads the Nginx JSON access log line by line, forever.
+Think of this as the "eyes" of the detector — it sees every
+HTTP request the moment Nginx records it.
+
+It handles:
+  - Waiting for the log file to appear (in case Nginx hasn't started yet)
+  - Log rotation (when the file gets replaced/renamed, we reopen it)
+  - Parsing each JSON line into a clean Python object
+  - Putting parsed entries onto an asyncio queue for the detector to consume
+"""
+
+
+"""
+notifier.py — Slack Notifications
+====================================
+Sends alerts to a Slack channel via an Incoming Webhook URL.
+
+Three types of alerts:
+  1. Ban alert    — when an IP gets blocked
+  2. Unban alert  — when a ban expires and the IP is released
+  3. Global alert — when a global traffic spike is detected (no single IP blocked)
+
+The webhook URL is read from config (which substitutes ${SLACK_WEBHOOK_URL}
+from the environment). If not configured, alerts are logged to stdout instead.
+
+Alert format includes:
+  - The condition that fired (z-score, rate multiplier, or error surge)
+  - Current rate vs. baseline
+  - Timestamp
+  - Ban duration (for ban alerts)
+"""
+
+
+"""
+unbanner.py — Automatic Ban Release
+=====================================
+Runs as a background task, waking up every 30 seconds to check
+whether any active bans have expired.
+
+The ban schedule creates a backoff effect:
+  - First time caught: banned for 10 minutes
+  - Gets caught again: banned for 30 minutes
+  - Again: 2 hours
+  - Again: permanent (never auto-released)
+
+For permanent bans: the unban_at field is None, so we skip them.
+Only a manual iptables -D command can remove a permanent ban.
+"""
+
+# =============================================================================
+# nginx.conf — HNG cloud.ng Reverse Proxy
+#
+# Two jobs:
+#   1. Forward all HTTP traffic to the Nextcloud container
+#   2. Write every request as a JSON line to /var/log/nginx/hng-access.log
+#      (which is the shared HNG-nginx-logs Docker volume)
+#
+# The detector reads these JSON lines in real time.
+# =============================================================================
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.yml — HNG cloud.ng Full Stack
+#
+# Four services, one network, three volumes.
+#
+# Service startup order:
+#   db → nextcloud → nginx → detector
+#
+# The key constraint from the brief:
+#   The shared volume MUST be named "HNG-nginx-logs" (exact spelling).
+#   nginx  → writes logs to it
+#   nextcloud → mounts it read-only
+#   detector  → mounts it read-only
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+# Named volumes persist data even when containers are stopped or removed.
+# They are managed by Docker and stored in /var/lib/docker/volumes/ on the host.
+

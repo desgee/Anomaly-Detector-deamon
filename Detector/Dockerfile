@@ -1,16 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Dockerfile — DevSecOps Anomaly Detector Daemon
-#
-# This Dockerfile belongs to the detector service only.
-# The other three services (db, nextcloud, nginx) use pre-built images
-# and do NOT have a Dockerfile.
-#
-# Build context: ./detector/
-# Built by:      docker compose up --build
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-
 FROM python:3.11.9-slim
 
 LABEL maintainer="HNG DevSecOps" \

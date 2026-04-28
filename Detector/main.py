@@ -1,25 +1,4 @@
-"""
-main.py — Orchestrator
-========================
-This is the entry point. It wires together all the other modules:
 
-  LogMonitor  →  queue  →  AnomalyDetector
-                               │
-                    ┌──────────┴───────────┐
-                    ▼                      ▼
-               Blocker              BaselineEngine
-                    │
-                    ├── AuditLogger
-                    ├── SlackNotifier
-                    └── Unbanner (auto-release)
-
-  Dashboard reads from the shared DetectorState.
-
-How to run:
-  python main.py --config config.yaml
-
-The program runs forever until you press Ctrl+C.
-"""
 
 import argparse
 import asyncio

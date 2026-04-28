@@ -1,19 +1,3 @@
-"""
-unbanner.py — Automatic Ban Release
-=====================================
-Runs as a background task, waking up every 30 seconds to check
-whether any active bans have expired.
-
-The ban schedule creates a backoff effect:
-  - First time caught: banned for 10 minutes
-  - Gets caught again: banned for 30 minutes
-  - Again: 2 hours
-  - Again: permanent (never auto-released)
-
-For permanent bans: the unban_at field is None, so we skip them.
-Only a manual iptables -D command can remove a permanent ban.
-"""
-
 import asyncio
 import logging
 import time

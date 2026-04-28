@@ -1,23 +1,3 @@
-"""
-notifier.py — Slack Notifications
-====================================
-Sends alerts to a Slack channel via an Incoming Webhook URL.
-
-Three types of alerts:
-  1. Ban alert    — when an IP gets blocked
-  2. Unban alert  — when a ban expires and the IP is released
-  3. Global alert — when a global traffic spike is detected (no single IP blocked)
-
-The webhook URL is read from config (which substitutes ${SLACK_WEBHOOK_URL}
-from the environment). If not configured, alerts are logged to stdout instead.
-
-Alert format includes:
-  - The condition that fired (z-score, rate multiplier, or error surge)
-  - Current rate vs. baseline
-  - Timestamp
-  - Ban duration (for ban alerts)
-"""
-
 import asyncio
 import json
 import logging

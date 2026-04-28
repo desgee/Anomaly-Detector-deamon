@@ -22,10 +22,6 @@ def _uptime() -> str:
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
-# ── HTML page ─────────────────────────────────────────────────────────────────
-# Kept in one string here so the whole project is self-contained with no
-# template files to manage.
-
 DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>

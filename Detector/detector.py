@@ -1,28 +1,3 @@
-"""
-detector.py — Sliding Window Tracker & Anomaly Detector
-=========================================================
-This is the "short-term memory" plus the "brain" of the system.
-
-SHORT-TERM MEMORY (SlidingWindowTracker):
-  Keeps a deque of timestamps for each IP and one global deque.
-  Each deque only holds the last 60 seconds of request timestamps.
-  Eviction is done by comparing timestamps to (now - 60).
-
-  Why a deque of timestamps instead of a counter?
-    A counter would only tell you "N requests this minute" — not when they
-    arrived. With timestamps, you can ask "how many in the LAST 60 seconds
-    from right now?" which slides continuously, not resetting each minute.
-
-BRAIN (AnomalyDetector):
-  For each IP (and globally), it:
-  1. Gets the current rate from the sliding window
-  2. Gets mean and stddev from the baseline engine
-  3. Computes z-score = (rate - mean) / stddev
-  4. Fires if z-score > 3.0 OR rate > 5x mean (whichever comes first)
-  5. Checks for error surge — if the IP is hammering 4xx/5xx, tighten threshold
-  6. Emits an AnomalyEvent for the main loop to handle
-"""
-
 import asyncio
 import logging
 import time
@@ -54,26 +29,7 @@ class AnomalyEvent:
 # ── The sliding window tracker ────────────────────────────────────────────────
 
 class SlidingWindowTracker:
-    """
-    Maintains deque-based sliding windows for per-IP and global request rates.
-
-    Data structure for each IP:
-        _ip_reqs[ip]  = deque of timestamps (floats)
-        _ip_errs[ip]  = deque of timestamps of ERROR requests only
-
-    Data structure for global traffic:
-        _global_reqs  = deque of timestamps
-
-    Eviction rule:
-        On every access, we walk the LEFT of the deque and pop entries
-        that are older than (now - window_seconds).
-        Since timestamps are appended in order, the oldest is always on the left.
-        This is O(k) where k = number of expired entries.
-
-    Rate formula:
-        rate = len(deque) / window_seconds
-        (count of timestamps still in window, divided by window size)
-    """
+    
 
     def __init__(self, window_seconds: int = 60):
         self.window_seconds = window_seconds
@@ -103,12 +59,7 @@ class SlidingWindowTracker:
             self._global_reqs.append(ts)
 
     def _evict(self, dq: deque, cutoff: float):
-        """
-        Remove all timestamps from the left of the deque that are older than cutoff.
-        Since timestamps are always appended in chronological order,
-        the deque is sorted — so we can just pop from the left until
-        we hit something recent enough.
-        """
+        
         while dq and dq[0] < cutoff:
             dq.popleft()
 
@@ -155,27 +106,7 @@ class SlidingWindowTracker:
 # ── The anomaly detector ──────────────────────────────────────────────────────
 
 class AnomalyDetector:
-    """
-    Consumes log entries from the monitor queue and emits AnomalyEvents.
-
-    For every log entry:
-      1. Feed it to the sliding window tracker
-      2. Feed it to the baseline engine
-      3. Check the IP for anomalies
-      4. Periodically check global rate for anomalies
-
-    The actual detection math:
-      z_score = (current_rate - baseline_mean) / baseline_stddev
-
-      If z_score > threshold  →  anomaly (statistically unusual)
-      If current_rate > 5 * baseline_mean  →  anomaly (simple multiplier check)
-
-      Error surge tightening:
-        If IP's error_rate > 3 * baseline_error_mean, the IP is probably
-        probing for vulnerabilities. We halve the z_score threshold so
-        it gets caught sooner.
-    """
-
+    
     def __init__(self, cfg: dict, baseline: BaselineEngine, tracker: SlidingWindowTracker,
                  whitelist: List[str]):
         ac = cfg.get("anomaly", {})
@@ -211,11 +142,7 @@ class AnomalyDetector:
     # ── Detection logic ───────────────────────────────────────────────────────
 
     def _compute_z(self, rate: float, mean: float, stddev: float) -> float:
-        """
-        Compute z-score: how many standard deviations is `rate` above `mean`?
-        A z-score of 3.0 means the rate is so high it would only happen
-        by chance 0.13% of the time in a normal distribution.
-        """
+       
         if stddev <= 0:
             return 0.0
         return (rate - mean) / stddev
@@ -325,13 +252,7 @@ class AnomalyDetector:
     # ── Main analysis loop ────────────────────────────────────────────────────
 
     async def run_loop(self, log_queue: asyncio.Queue):
-        """
-        Main loop:
-        - Reads log entries from the queue (put there by the monitor)
-        - Feeds them to the tracker and baseline
-        - Checks the source IP for anomalies after every entry
-        - Checks global traffic every second
-        """
+        
         last_global_check = time.time()
         checked_this_second: set = set()  # don't check same IP twice per second
 

@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import subprocess
@@ -145,12 +144,7 @@ class Blocker:
     # ── iptables commands ─────────────────────────────────────────────────────
 
     async def _iptables_drop(self, ip: str) -> bool:
-        """
-        Add iptables rule: DROP all packets from this IP.
-        We use -I (insert at top) so our rules take priority.
-
-        First checks if the rule already exists to avoid duplicates.
-        """
+       
         try:
             # Check if rule already exists
             check = await asyncio.create_subprocess_exec(

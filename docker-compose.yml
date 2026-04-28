@@ -1,29 +1,8 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# docker-compose.yml — HNG cloud.ng Full Stack
-#
-# Four services, one network, three volumes.
-#
-# Service startup order:
-#   db → nextcloud → nginx → detector
-#
-# The key constraint from the brief:
-#   The shared volume MUST be named "HNG-nginx-logs" (exact spelling).
-#   nginx  → writes logs to it
-#   nextcloud → mounts it read-only
-#   detector  → mounts it read-only
-# ─────────────────────────────────────────────────────────────────────────────
-
 version: "3.9"
 
 
-# ── Named volumes ─────────────────────────────────────────────────────────────
-# Named volumes persist data even when containers are stopped or removed.
-# They are managed by Docker and stored in /var/lib/docker/volumes/ on the host.
 volumes:
-
-  # The shared Nginx log volume — this name is required by the task brief.
-  # nginx writes JSON access logs here.
-  # nextcloud and detector mount it read-only.
+  # Shared volume for Nginx access logs. Nginx writes here, Detector reads here. 
   HNG-nginx-logs:
     driver: local
 
@@ -35,16 +14,10 @@ volumes:
   db-data:
     driver: local
 
-
-# ── Network ───────────────────────────────────────────────────────────────────
-# All four containers communicate on this private bridge network.
-# No container is reachable from outside except through published ports.
 networks:
   hng-net:
     driver: bridge
 
-
-# ── Services ──────────────────────────────────────────────────────────────────
 services:
 
   # ── 1. PostgreSQL ────────────────────────────────────────────────────────────
@@ -77,14 +50,7 @@ services:
       timeout: 5s       # fail the check if no response in 5 seconds
       retries: 5        # mark unhealthy after 5 consecutive failures
       start_period: 10s # give the DB 10 seconds to boot before checking
-
-
-  # ── 2. Nextcloud ─────────────────────────────────────────────────────────────
-  # This is the pre-built image provided by HNG. We do NOT modify it.
-  # We only pass environment variables to configure it on first run.
-  #
-  # It does NOT publish any ports directly — all traffic goes through Nginx.
-  # Inside the hng-net network, Nginx reaches it at http://nextcloud:80
+  
   nextcloud:
     image: kefaslungu/hng-nextcloud:latest
     container_name: hng-nextcloud
@@ -106,16 +72,13 @@ services:
       NEXTCLOUD_ADMIN_USER:     ${NC_ADMIN:-admin}
       NEXTCLOUD_ADMIN_PASSWORD: ${NC_ADMIN_PASS:-changeme}
 
-      # The server IP must be listed as a trusted domain
-      # Otherwise Nextcloud rejects requests as untrusted
+      
       NEXTCLOUD_TRUSTED_DOMAINS: ${SERVER_IP:-localhost}
 
     volumes:
       # Nextcloud's files, apps, and config
       - nextcloud-data:/var/www/html
-
-      # Mount the shared log volume read-only (as required by the brief)
-      # Nextcloud itself doesn't use these logs — it's just mounted per spec
+      
       - HNG-nginx-logs:/var/log/nginx:ro
 
     networks:
@@ -130,14 +93,6 @@ services:
       start_period: 90s  # Nextcloud takes a while on first boot (installs DB schema)
 
 
-  # ── 3. Nginx ──────────────────────────────────────────────────────────────────
-  # Sits in front of Nextcloud as a reverse proxy.
-  # Its two jobs:
-  #   a) Forward all HTTP traffic to the Nextcloud container
-  #   b) Write JSON access logs to the HNG-nginx-logs volume
-  #
-  # Port 80 is the only port exposed to the outside world.
-  # The dashboard (port 8080) is served by the detector, not Nginx.
   nginx:
     image: nginx:1.25-alpine
     container_name: hng-nginx
@@ -148,8 +103,6 @@ services:
         condition: service_started
 
     ports:
-      # Map host port 80 → container port 80
-      # This is how users reach Nextcloud from the internet
       - "80:80"
 
     volumes:
@@ -172,18 +125,6 @@ services:
       retries: 3
 
 
-  # ── 4. Detector ───────────────────────────────────────────────────────────────
-  # Our custom anomaly detection daemon. This is the only service with a
-  # Dockerfile — the others all use pre-built images.
-  #
-  # What it does:
-  #   - Reads Nginx JSON logs from the shared volume
-  #   - Tracks per-IP and global request rates via sliding windows
-  #   - Computes a rolling baseline (mean + stddev) from the last 30 minutes
-  #   - Flags anomalies by z-score > 3.0 or rate > 5x baseline
-  #   - Blocks malicious IPs with iptables DROP rules
-  #   - Sends Slack alerts for bans, unbans, and global spikes
-  #   - Serves a live metrics dashboard on port 8080
   detector:
     build:
       # Docker looks in the ./detector/ folder for the Dockerfile
@@ -199,8 +140,7 @@ services:
         condition: service_started
 
     environment:
-      # Slack webhook URL — set this in your .env file
-      # If empty, alerts print to stdout instead (visible in docker logs)
+      
       SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
 
     volumes:
@@ -217,20 +157,12 @@ services:
       - /var/log/detector:/var/log/detector
 
     ports:
-      # The live metrics dashboard is served here
-      # This is the URL you submit for grading
+      # The live metrics dashboard is served here    
       - "8080:8080"
 
     networks:
       - hng-net
 
-    # ── Capability: NET_ADMIN ─────────────────────────────────────────────────
-    # Required so the container can run iptables commands.
-    # Without this, iptables -I INPUT -s <ip> -j DROP would fail with
-    # "Operation not permitted".
-    #
-    # We do NOT use privileged: true — that grants ALL capabilities.
-    # NET_ADMIN grants only what we need (network/firewall operations).
     cap_add:
       - NET_ADMIN
 
