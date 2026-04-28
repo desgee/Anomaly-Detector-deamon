@@ -20,12 +20,7 @@ networks:
 
 services:
 
-  # ── 1. PostgreSQL ────────────────────────────────────────────────────────────
-  # Nextcloud needs a database to store users, files metadata, settings, etc.
-  # We use PostgreSQL 15 (Alpine variant = smaller image).
-  #
-  # Credentials come from the .env file.
-  # The healthcheck ensures Nextcloud doesn't start before the DB is ready.
+  
   db:
     image: postgres:15-alpine
     container_name: hng-db
