@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────
+# HNG Anomaly Detector — Runtime Configuration
+# All thresholds live here. Never hardcode these in Python.
+# ─────────────────────────────────────────────────────────────────────
+
+# Where to read/write logs
+log:
+  nginx_access_log: "/var/log/nginx/hng-access.log"
+  audit_log: "/var/log/detector/audit.log"
+
+# The sliding window — how far back we look for "current" rate
+sliding_window:
+  seconds: 60                  # keep 60 seconds of timestamps per IP and globally
+
+# The rolling baseline — what "normal" looks like
+baseline:
+  rolling_window_minutes: 30   # look back 30 minutes to compute mean/stddev
+  recalc_interval_seconds: 60  # recalculate every 60 seconds
+  min_samples: 30              # need at least 30 data points before trusting baseline
+  prefer_hour_min_samples: 60  # use current-hour slot if it has this many seconds of data
+  floor_mean: 0.1              # never let mean drop below this (avoids division by zero)
+  floor_stddev: 0.05           # never let stddev drop below this
+
+# Anomaly detection thresholds
+anomaly:
+  z_score_threshold: 3.0       # fire if (rate - mean) / stddev > 3.0
+  rate_multiplier: 5.0         # fire if rate > 5x the mean (whichever fires first)
+  error_rate_multiplier: 3.0   # error surge: if IP's error rate > 3x baseline error rate
+  error_tightening: 0.5        # multiply z_score_threshold by this when error surge active
+  flag_cooldown_seconds: 30    # wait this long before re-flagging the same IP
+
+# Blocking and ban schedule
+blocking:
+  # Backoff schedule in minutes. -1 means permanent.
+  ban_schedule_minutes: [10, 30, 120, -1]
+
+# Slack notifications
+slack:
+  webhook_url: "${SLACK_WEBHOOK_URL}"   # set via environment variable
+  enabled: true
+
+# IPs that should never be blocked
+whitelist:
+  - "127.0.0.1"
+  - "::1"
+  - "172.16.0.0/12"   # Docker internal network
+
+# Dashboard web server
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+  refresh_seconds: 3
