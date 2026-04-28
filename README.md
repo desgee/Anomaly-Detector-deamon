@@ -261,3 +261,64 @@ All thresholds live in `detector/config.yaml`. Nothing is hardcoded in Python.
 | `anomaly.flag_cooldown_seconds` | 30 | Minimum seconds between flagging the same IP |
 | `blocking.ban_schedule_minutes` | [10,30,120,-1] | Progressive ban durations |
 | `dashboard.port` | 8080 | Dashboard port |
+
+
+"""
+baseline.py — Rolling Baseline Engine
+======================================
+This is the "long-term memory" of the detector.
+
+It answers the question: "What does normal traffic look like right now?"
+
+How it works:
+  1. Every second of traffic, we record how many requests arrived in that second
+  2. We keep a 30-minute rolling window of these per-second counts
+  3. Every 60 seconds, we compute mean and standard deviation from that window
+  4. We also bucket counts by calendar hour — so if 8pm traffic is typically
+     heavier than 2am traffic, we prefer the current hour's data
+
+Why this matters:
+  The anomaly detector compares the CURRENT rate against this baseline.
+  Without a rolling baseline, we'd either hardcode a threshold (bad — traffic
+  patterns change) or compare against all-time history (also bad — yesterday's
+  DDoS would skew the numbers).
+"""
+
+"""
+blocker.py — IP Blocker
+========================
+Manages iptables DROP rules for banned IPs.
+
+When an IP is flagged as anomalous, this module:
+  1. Looks up how many times this IP has been banned before (ban level)
+  2. Picks the right ban duration from the schedule (10m, 30m, 2h, permanent)
+  3. Runs: iptables -I INPUT -s <ip> -j DROP
+  4. Records the ban so the unbanner knows when to release it
+
+Why iptables?
+  It works at the kernel level — banned IPs can't even complete a TCP handshake.
+  Their packets are dropped before Nginx even sees them.
+
+Why -I (insert) instead of -A (append)?
+  -I inserts at the top of the chain. That way our DROP rules are checked
+  first, before any ACCEPT rules further down.
+"""
+
+"""
+dashboard.py — Live Metrics Web Dashboard
+==========================================
+Serves a web page at http://<your-server>:8080 that shows:
+  - Currently banned IPs
+  - Global requests/second
+  - Top 10 source IPs
+  - CPU and memory usage
+  - Current baseline mean and stddev
+  - Detector uptime
+
+The page polls /api/metrics every 3 seconds and updates itself
+without a full page reload (simple fetch + DOM update).
+
+Two endpoints:
+  GET /          → The HTML dashboard page
+  GET /api/metrics → JSON blob with all current metrics
+"""

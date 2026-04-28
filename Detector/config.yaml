@@ -1,8 +1,3 @@
-# ─────────────────────────────────────────────────────────────────────
-# HNG Anomaly Detector — Runtime Configuration
-# All thresholds live here. Never hardcode these in Python.
-# ─────────────────────────────────────────────────────────────────────
-
 # Where to read/write logs
 log:
   nginx_access_log: "/var/log/nginx/hng-access.log"

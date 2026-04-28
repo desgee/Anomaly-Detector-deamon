@@ -1,22 +1,3 @@
-"""
-blocker.py — IP Blocker
-========================
-Manages iptables DROP rules for banned IPs.
-
-When an IP is flagged as anomalous, this module:
-  1. Looks up how many times this IP has been banned before (ban level)
-  2. Picks the right ban duration from the schedule (10m, 30m, 2h, permanent)
-  3. Runs: iptables -I INPUT -s <ip> -j DROP
-  4. Records the ban so the unbanner knows when to release it
-
-Why iptables?
-  It works at the kernel level — banned IPs can't even complete a TCP handshake.
-  Their packets are dropped before Nginx even sees them.
-
-Why -I (insert) instead of -A (append)?
-  -I inserts at the top of the chain. That way our DROP rules are checked
-  first, before any ACCEPT rules further down.
-"""
 
 import asyncio
 import logging

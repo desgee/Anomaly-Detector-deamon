@@ -1,21 +1,4 @@
-"""
-dashboard.py — Live Metrics Web Dashboard
-==========================================
-Serves a web page at http://<your-server>:8080 that shows:
-  - Currently banned IPs
-  - Global requests/second
-  - Top 10 source IPs
-  - CPU and memory usage
-  - Current baseline mean and stddev
-  - Detector uptime
 
-The page polls /api/metrics every 3 seconds and updates itself
-without a full page reload (simple fetch + DOM update).
-
-Two endpoints:
-  GET /          → The HTML dashboard page
-  GET /api/metrics → JSON blob with all current metrics
-"""
 
 import asyncio
 import json

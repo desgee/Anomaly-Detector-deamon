@@ -1,23 +1,4 @@
-"""
-baseline.py — Rolling Baseline Engine
-======================================
-This is the "long-term memory" of the detector.
 
-It answers the question: "What does normal traffic look like right now?"
-
-How it works:
-  1. Every second of traffic, we record how many requests arrived in that second
-  2. We keep a 30-minute rolling window of these per-second counts
-  3. Every 60 seconds, we compute mean and standard deviation from that window
-  4. We also bucket counts by calendar hour — so if 8pm traffic is typically
-     heavier than 2am traffic, we prefer the current hour's data
-
-Why this matters:
-  The anomaly detector compares the CURRENT rate against this baseline.
-  Without a rolling baseline, we'd either hardcode a threshold (bad — traffic
-  patterns change) or compare against all-time history (also bad — yesterday's
-  DDoS would skew the numbers).
-"""
 
 import asyncio
 import logging
@@ -231,15 +212,7 @@ class BaselineEngine:
         return snap
 
     def _compute(self, now: float) -> BaselineSnapshot:
-        """
-        Choose the best available baseline and compute it.
-        Called under lock.
-
-        Priority:
-          1. Current calendar hour's slot (if it has enough data)
-          2. 30-minute rolling window (if it has enough data)
-          3. Floor values (startup / very low traffic)
-        """
+        
         current_hour_key = int(now // 3600)
         hour_slot = self._hourly.get(current_hour_key)
 
