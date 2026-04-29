@@ -13,7 +13,7 @@ logger = logging.getLogger("monitor")
 
 @dataclass
 class LogEntry:
-    """One parsed line from the Nginx access log."""
+    
     source_ip: str
     timestamp: float      # Unix epoch (seconds since 1970)
     method: str           # GET, POST, etc.
