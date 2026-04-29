@@ -13,7 +13,7 @@ logger = logging.getLogger("baseline")
 
 @dataclass
 class BaselineSnapshot:
-    """The current computed baseline — mean, stddev, and metadata."""
+    #The current computed baseline — mean, stddev, and metadata."""
     mean: float           # average requests per second
     stddev: float         # how much it varies
     error_mean: float     # average error (4xx/5xx) rate

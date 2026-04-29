@@ -39,10 +39,7 @@ class SlidingWindowTracker:
         self._lock = asyncio.Lock()
 
     async def record(self, entry: LogEntry):
-        """
-        Record one request from the log.
-        Adds its timestamp to the correct per-IP deque and the global deque.
-        """
+        
         ts = entry.timestamp
         ip = entry.source_ip
         is_error = entry.status >= 400

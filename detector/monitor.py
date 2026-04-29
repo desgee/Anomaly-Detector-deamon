@@ -25,13 +25,7 @@ class LogEntry:
 # ── JSON line parser ──────────────────────────────────────────────────────────
 
 def parse_line(line: str) -> Optional[LogEntry]:
-    """
-    Turn one raw JSON log line into a LogEntry.
-    Returns None if the line is blank or unparseable.
-
-    Our Nginx log format looks like:
-    {"source_ip":"1.2.3.4","timestamp":1714123456.789,"method":"GET",...}
-    """
+    
     line = line.strip()
     if not line:
         return None  # blank line — skip it
@@ -77,20 +71,7 @@ def parse_line(line: str) -> Optional[LogEntry]:
 # ── The monitor class ─────────────────────────────────────────────────────────
 
 class LogMonitor:
-    """
-    Tails the Nginx access log file in real time.
-
-    How it works:
-    1. Open the file and seek to the END (we don't replay old history)
-    2. Every 100ms, try to read a new line
-    3. If we get one, parse it and put it on the queue
-    4. If no new line, check for log rotation and wait briefly
-
-    Log rotation detection:
-    - Nginx (or logrotate) may rename the current log file and create a new one
-    - We detect this by watching the file's inode number
-    - If the inode changes, we close and reopen the file
-    """
+    
 
     def __init__(self, log_path: str, queue: asyncio.Queue):
         self.log_path = log_path
@@ -100,7 +81,7 @@ class LogMonitor:
         self._inode: Optional[int] = None
 
     async def start(self):
-        """Main entry point — runs forever until stop() is called."""
+        #Main entry point — runs forever until stop() is called.
         self._running = True
         logger.info(f"LogMonitor starting — watching {self.log_path}")
         await self._tail_loop()
@@ -111,13 +92,13 @@ class LogMonitor:
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     async def _wait_for_file(self):
-        """Block until the log file exists. Useful on first startup."""
+        #Block until the log file exists. Useful on first startup.
         while self._running and not os.path.exists(self.log_path):
             logger.info(f"Waiting for log file: {self.log_path}")
             await asyncio.sleep(2)
 
     async def _open_file(self, seek_to_end: bool = True):
-        """Open the log file. On first open, seek to end to skip old lines."""
+        #Open the log file. On first open, seek to end to skip old lines.
         f = open(self.log_path, "r", encoding="utf-8", errors="replace")
         stat = os.fstat(f.fileno())
         self._inode = stat.st_ino
@@ -127,10 +108,7 @@ class LogMonitor:
         return f
 
     async def _rotation_happened(self) -> bool:
-        """
-        Check if the log file was rotated (replaced with a new file).
-        We do this by comparing the inode of the path vs. our open file.
-        """
+        
         try:
             stat = os.stat(self.log_path)
             # Different inode = it's a new file
@@ -144,9 +122,9 @@ class LogMonitor:
         return False
 
     async def _tail_loop(self):
-        """
-        Core loop: wait for file → open → read lines forever.
-        """
+        
+        #Core loop: wait for file → open → read lines forever.
+        
         await self._wait_for_file()
         self._file = await self._open_file(seek_to_end=True)
 

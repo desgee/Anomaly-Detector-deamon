@@ -36,7 +36,7 @@ logger = logging.getLogger("main")
 
 @dataclass
 class DetectorState:
-    """Everything the dashboard needs to read, all in one object."""
+    #Everything the dashboard needs to read, all in one object."""
     blocker:   Blocker
     baseline:  BaselineEngine
     tracker:   SlidingWindowTracker
@@ -47,16 +47,7 @@ class DetectorState:
 # ── Audit logger ──────────────────────────────────────────────────────────────
 
 class AuditLogger:
-    """
-    Writes structured log entries for every important event.
-
-    Format: [timestamp] ACTION ip | condition | rate | baseline | duration
-
-    Examples:
-      [2026-04-26T10:00:00Z] BAN 1.2.3.4 | z-score=8.4 > 3.0 | rate=47.3 | baseline=0.85 | duration=10min
-      [2026-04-26T10:10:05Z] UNBAN 1.2.3.4 | was_level=0 | elapsed=10.1min
-      [2026-04-26T10:11:00Z] BASELINE_RECALC - | source=rolling_30min | mean=0.92 | stddev=0.18 | samples=660
-    """
+    #Logs important events in a structured format.
 
     def __init__(self, path: str):
         self.path = path
@@ -67,7 +58,7 @@ class AuditLogger:
         return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def _write(self, line: str):
-        """Write one line to the audit log file AND to stdout."""
+        #Write one line to the audit log file AND to stdout.
         print(f"AUDIT: {line}")
         try:
             with open(self.path, "a", encoding="utf-8") as f:
@@ -101,7 +92,7 @@ class AuditLogger:
 # ── Config loader ─────────────────────────────────────────────────────────────
 
 def load_config(path: str) -> dict:
-    """Load YAML config and substitute ${ENV_VAR} placeholders."""
+    #Load YAML config and substitute ${ENV_VAR} placeholders."""
     with open(path, "r") as f:
         raw = f.read()
     # Replace ${VAR} with actual environment variables

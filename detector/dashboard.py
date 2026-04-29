@@ -15,7 +15,7 @@ _STARTED_AT = time.time()
 
 
 def _uptime() -> str:
-    """Returns uptime as HH:MM:SS string."""
+    #Returns uptime as HH:MM:SS string."""
     elapsed = int(time.time() - _STARTED_AT)
     h, rem = divmod(elapsed, 3600)
     m, s   = divmod(rem, 60)

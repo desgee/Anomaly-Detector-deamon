@@ -33,10 +33,7 @@ def _ts_to_str(ts: float) -> str:
 
 
 class SlackNotifier:
-    """
-    Sends Slack messages via HTTP POST to a webhook URL.
-    Uses aiohttp for async HTTP — doesn't block the event loop.
-    """
+    
 
     def __init__(self, cfg: dict):
         sc = cfg.get("slack", {})
@@ -55,7 +52,7 @@ class SlackNotifier:
         return self._session
 
     async def _post(self, text: str):
-        """Send a message to Slack. Falls back to stdout if not configured."""
+        #Send a message to Slack. Falls back to stdout if not configured."""
         if not self.enabled:
             # Print to stdout so it's visible in Docker logs
             print(f"[SLACK ALERT] {text}")
@@ -79,7 +76,7 @@ class SlackNotifier:
     # ── Alert types ───────────────────────────────────────────────────────────
 
     async def send_ban_alert(self, record: BanRecord):
-        """Sent when an IP gets blocked."""
+        #Sent when an IP gets blocked."""
         text = (
             f":rotating_light: *IP BANNED* — `{record.ip}`\n"
             f"• *Condition:* {record.condition}\n"
@@ -92,7 +89,7 @@ class SlackNotifier:
         logger.info(f"Slack ban alert sent for {record.ip}")
 
     async def send_unban_alert(self, record: BanRecord):
-        """Sent when a ban expires."""
+        #Sent when a ban expires."""
         elapsed = (time.time() - record.banned_at) / 60
         text = (
             f":unlock: *IP UNBANNED* — `{record.ip}`\n"
@@ -104,7 +101,7 @@ class SlackNotifier:
         logger.info(f"Slack unban alert sent for {record.ip}")
 
     async def send_global_alert(self, event: AnomalyEvent):
-        """Sent when global traffic spikes (Slack only — no IP to block)."""
+        #Sent when global traffic spikes (Slack only — no IP to block)."""
         text = (
             f":warning: *GLOBAL TRAFFIC ANOMALY*\n"
             f"• *Condition:* {event.condition}\n"
